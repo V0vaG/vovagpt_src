@@ -4,13 +4,11 @@ services:
   chat_app:
     build: .
     container_name: chat_ai_app
-    ports:
-      - "5000:5000"
+    network_mode: host  # Required to access Ollama on localhost
     environment:
       - SECRET_KEY=${SECRET_KEY:-your_secret_key_change_in_production}
-      - VERSION=${VERSION:-1.0.0}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - VERSION=${VERSION:-2.0.0}
+      - OLLAMA_HOST=${OLLAMA_HOST:-http://localhost:11434}
     volumes:
       - ./data:/root/script_files/chat/data
     restart: unless-stopped
@@ -27,4 +25,5 @@ services:
     depends_on:
       - chat_app
     restart: unless-stopped
+    network_mode: host  # Required for host network access
 

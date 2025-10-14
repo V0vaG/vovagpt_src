@@ -1,19 +1,19 @@
-from flask import Flask, render_template, redirect, request, url_for, flash, session, jsonify
+from flask import Flask, render_template, redirect, request, url_for, flash, session, jsonify, Response, stream_with_context
 import json
 import os
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 import uuid
 from datetime import datetime
-import openai
-from anthropic import Anthropic
+import requests
+import time
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your_secret_key_change_in_production')
 app_version = os.getenv('VERSION', '1.0.0')
 
 # Set up paths
-alias = "chat"
+alias = "vovagpt"
 HOME_DIR = os.path.expanduser("~")
 FILES_PATH = os.path.join(HOME_DIR, "script_files", alias)
 DATA_DIR = os.path.join(FILES_PATH, "data")
@@ -23,9 +23,8 @@ CHATS_FILE = os.path.join(DATA_DIR, 'chats.json')
 # Ensure the directory exists
 os.makedirs(DATA_DIR, exist_ok=True)
 
-# AI Configuration
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', '')
-ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_API_KEY', '')
+# Ollama Configuration
+OLLAMA_HOST = os.getenv('OLLAMA_HOST', 'http://localhost:11434')
 
 # ------------------ Helpers ------------------
 
@@ -89,44 +88,91 @@ def save_chats(chats):
     with open(CHATS_FILE, 'w') as f:
         json.dump(chats, f, indent=2)
 
-def get_ai_response(messages, model="gpt-4"):
-    """Get response from AI model"""
+# ------------------ Ollama Functions ------------------
+
+def get_ollama_models():
+    """Get list of downloaded Ollama models"""
     try:
-        if model.startswith("gpt"):
-            if not OPENAI_API_KEY:
-                return {"error": "OpenAI API key not configured"}
-            
-            openai.api_key = OPENAI_API_KEY
-            response = openai.ChatCompletion.create(
-                model=model,
-                messages=messages,
-                temperature=0.7,
-                max_tokens=2000
-            )
-            return {"content": response.choices[0].message.content}
+        response = requests.get(f"{OLLAMA_HOST}/api/tags", timeout=5)
+        if response.status_code == 200:
+            data = response.json()
+            return [model['name'] for model in data.get('models', [])]
+        return []
+    except Exception as e:
+        print(f"Error getting models: {e}")
+        return []
+
+def get_available_ollama_models():
+    """Get list of popular Ollama models available for download"""
+    # Popular Ollama models
+    return [
+        {"name": "llama3.2:latest", "size": "2.0GB", "description": "Meta's Llama 3.2 - Fast and efficient"},
+        {"name": "llama3.2:3b", "size": "2.0GB", "description": "Llama 3.2 3B - Lightweight model"},
+        {"name": "llama3.1:latest", "size": "4.7GB", "description": "Meta's Llama 3.1 8B - Balanced performance"},
+        {"name": "llama3.1:70b", "size": "40GB", "description": "Llama 3.1 70B - Best quality (large)"},
+        {"name": "qwen2.5:latest", "size": "4.7GB", "description": "Alibaba's Qwen 2.5 - Multilingual"},
+        {"name": "qwen2.5:7b", "size": "4.7GB", "description": "Qwen 2.5 7B - Good for coding"},
+        {"name": "qwen2.5:14b", "size": "9.0GB", "description": "Qwen 2.5 14B - Better reasoning"},
+        {"name": "qwen2.5-coder:latest", "size": "4.7GB", "description": "Qwen 2.5 Coder - Specialized for coding"},
+        {"name": "deepseek-r1:latest", "size": "4.7GB", "description": "DeepSeek R1 - Reasoning model"},
+        {"name": "deepseek-r1:7b", "size": "4.7GB", "description": "DeepSeek R1 7B"},
+        {"name": "deepseek-coder-v2:latest", "size": "8.9GB", "description": "DeepSeek Coder V2 - Advanced coding"},
+        {"name": "mistral:latest", "size": "4.1GB", "description": "Mistral 7B - Fast and capable"},
+        {"name": "mixtral:latest", "size": "26GB", "description": "Mixtral 8x7B - MoE model"},
+        {"name": "phi4:latest", "size": "7.9GB", "description": "Microsoft Phi 4 - Compact but powerful"},
+        {"name": "gemma2:latest", "size": "5.4GB", "description": "Google Gemma 2 - Efficient"},
+        {"name": "codellama:latest", "size": "3.8GB", "description": "Meta's Code Llama - For coding"},
+        {"name": "granite-code:latest", "size": "4.6GB", "description": "IBM Granite Code - Enterprise coding"},
+    ]
+
+def download_ollama_model(model_name):
+    """Download/pull an Ollama model"""
+    try:
+        response = requests.post(
+            f"{OLLAMA_HOST}/api/pull",
+            json={"name": model_name},
+            stream=True,
+            timeout=None
+        )
+        return response
+    except Exception as e:
+        return None
+
+def delete_ollama_model(model_name):
+    """Delete an Ollama model"""
+    try:
+        response = requests.delete(
+            f"{OLLAMA_HOST}/api/delete",
+            json={"name": model_name},
+            timeout=10
+        )
+        return response.status_code == 200
+    except Exception as e:
+        print(f"Error deleting model: {e}")
+        return False
+
+def get_ai_response(messages, model):
+    """Get response from Ollama model"""
+    try:
+        response = requests.post(
+            f"{OLLAMA_HOST}/api/chat",
+            json={
+                "model": model,
+                "messages": messages,
+                "stream": False
+            },
+            timeout=120
+        )
         
-        elif model.startswith("claude"):
-            if not ANTHROPIC_API_KEY:
-                return {"error": "Anthropic API key not configured"}
-            
-            client = Anthropic(api_key=ANTHROPIC_API_KEY)
-            # Convert messages format for Claude
-            system_msg = next((m["content"] for m in messages if m["role"] == "system"), None)
-            user_messages = [m for m in messages if m["role"] != "system"]
-            
-            response = client.messages.create(
-                model=model,
-                max_tokens=2000,
-                system=system_msg if system_msg else "",
-                messages=user_messages
-            )
-            return {"content": response.content[0].text}
+        if response.status_code == 200:
+            data = response.json()
+            if 'message' in data and 'content' in data['message']:
+                return {"content": data['message']['content']}
         
-        else:
-            return {"error": "Unknown model"}
+        return {"error": f"Model response error: {response.status_code}"}
     
     except Exception as e:
-        return {"error": str(e)}
+        return {"error": f"Ollama error: {str(e)}. Make sure Ollama is running."}
 
 # ------------------ Routes ------------------
 
@@ -216,14 +262,24 @@ def dashboard():
                 user_data = u
                 break
     else:
-        user_data = {"model_preference": "gpt-4"}
+        user_data = {"model_preference": "llama3.2:latest"}
+    
+    # Get Ollama models
+    downloaded_models = get_ollama_models()
+    available_models = get_available_ollama_models()
+    
+    # Filter out already downloaded models from available list
+    downloaded_names = set(downloaded_models)
+    available_models = [m for m in available_models if m['name'] not in downloaded_names]
     
     return render_template(
         'dashboard.html',
         username=username,
         role=role,
         user_chats=user_chats,
-        user_data=user_data
+        user_data=user_data,
+        downloaded_models=downloaded_models,
+        available_models=available_models
     )
 
 @app.route('/root_dashboard')
@@ -254,6 +310,12 @@ def remove_user_route():
 def new_chat():
     username = session.get('user_id')
     chat_name = request.form.get('chat_name', 'New Chat').strip()
+    model = request.form.get('model', '')
+    
+    # If no model specified, use first available downloaded model
+    if not model:
+        downloaded_models = get_ollama_models()
+        model = downloaded_models[0] if downloaded_models else 'llama3.2:latest'
     
     new_chat = {
         'id': str(uuid.uuid4()),
@@ -261,7 +323,7 @@ def new_chat():
         'created_at': datetime.now().isoformat(),
         'created_by': username,
         'messages': [],
-        'model': request.form.get('model', 'gpt-4')
+        'model': model
     }
     
     chats = load_chats()
@@ -379,6 +441,48 @@ def clear_chat(chat_id):
     flash("Chat history cleared.", "info")
     return redirect(url_for('view_chat', chat_id=chat_id))
 
+@app.route('/model/download/<path:model_name>')
+@login_required
+def download_model(model_name):
+    """Stream model download progress"""
+    def generate():
+        response = download_ollama_model(model_name)
+        if response is None:
+            yield f"data: {json.dumps({'error': 'Failed to start download'})}\n\n"
+            return
+        
+        for line in response.iter_lines():
+            if line:
+                try:
+                    data = json.loads(line)
+                    yield f"data: {json.dumps(data)}\n\n"
+                except json.JSONDecodeError:
+                    continue
+        
+        yield f"data: {json.dumps({'status': 'complete'})}\n\n"
+    
+    return Response(stream_with_context(generate()), mimetype='text/event-stream')
+
+@app.route('/model/delete/<path:model_name>', methods=['POST'])
+@login_required
+def delete_model(model_name):
+    """Delete a downloaded model"""
+    success = delete_ollama_model(model_name)
+    if success:
+        flash(f"Model '{model_name}' deleted successfully!", "success")
+    else:
+        flash(f"Failed to delete model '{model_name}'", "danger")
+    return redirect(url_for('dashboard'))
+
+@app.route('/models/list')
+@login_required
+def list_models():
+    """API endpoint to get current models"""
+    return jsonify({
+        'downloaded': get_ollama_models(),
+        'available': get_available_ollama_models()
+    })
+
 @app.route('/settings', methods=['GET', 'POST'])
 @login_required
 def settings():
@@ -386,7 +490,7 @@ def settings():
     users = load_users()
     
     if request.method == 'POST':
-        model_preference = request.form.get('model_preference', 'gpt-4')
+        model_preference = request.form.get('model_preference', 'llama3.2:latest')
         
         if session.get('is_root'):
             # Update root user preferences (you could extend this)
@@ -409,9 +513,12 @@ def settings():
                 user_data = u
                 break
     else:
-        user_data = {"model_preference": "gpt-4"}
+        user_data = {"model_preference": "llama3.2:latest"}
     
-    return render_template('settings.html', user_data=user_data)
+    # Get downloaded models for settings
+    downloaded_models = get_ollama_models()
+    
+    return render_template('settings.html', user_data=user_data, downloaded_models=downloaded_models)
 
 @app.route('/logout')
 @login_required

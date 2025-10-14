@@ -207,7 +207,7 @@
     </div>
 
     <div class="info-box">
-      <p>💡 Configure your API keys in the environment variables (OPENAI_API_KEY, ANTHROPIC_API_KEY)</p>
+      <p>💡 This app uses Ollama for offline AI models. Download models from the dashboard to get started!</p>
     </div>
 
     <div class="card">
@@ -216,25 +216,15 @@
         <div class="form-group">
           <label for="model_preference">Default AI Model</label>
           <select id="model_preference" name="model_preference">
-            <optgroup label="OpenAI">
-              <option value="gpt-4" {% if user_data.model_preference == 'gpt-4' %}selected{% endif %}>
-                GPT-4 (Most capable, slower)
-              </option>
-              <option value="gpt-3.5-turbo" {% if user_data.model_preference == 'gpt-3.5-turbo' %}selected{% endif %}>
-                GPT-3.5 Turbo (Fast and efficient)
-              </option>
-            </optgroup>
-            <optgroup label="Anthropic">
-              <option value="claude-3-opus-20240229" {% if user_data.model_preference == 'claude-3-opus-20240229' %}selected{% endif %}>
-                Claude 3 Opus (Most capable)
-              </option>
-              <option value="claude-3-sonnet-20240229" {% if user_data.model_preference == 'claude-3-sonnet-20240229' %}selected{% endif %}>
-                Claude 3 Sonnet (Balanced)
-              </option>
-              <option value="claude-3-haiku-20240307" {% if user_data.model_preference == 'claude-3-haiku-20240307' %}selected{% endif %}>
-                Claude 3 Haiku (Fastest)
-              </option>
-            </optgroup>
+            {% if downloaded_models %}
+              {% for model in downloaded_models %}
+                <option value="{{ model }}" {% if user_data.model_preference == model %}selected{% endif %}>
+                  {{ model }}
+                </option>
+              {% endfor %}
+            {% else %}
+              <option value="">No models available - download one from dashboard</option>
+            {% endif %}
           </select>
           <div class="help-text">
             This model will be used by default for new chats
@@ -248,8 +238,9 @@
     <div class="card">
       <h3>About</h3>
       <p style="color: #666; line-height: 1.6;">
-        Chat AI is a powerful conversational interface that supports multiple AI models including OpenAI's GPT and Anthropic's Claude. 
-        Create multiple chat sessions, save your conversation history, and enjoy a modern, intuitive interface.
+        Chat AI is a powerful conversational interface powered by Ollama - 100% offline and private AI models. 
+        Download models from the dashboard, create multiple chat sessions, save your conversation history, and enjoy a modern, intuitive interface.
+        All processing happens locally on your machine!
       </p>
     </div>
   </div>

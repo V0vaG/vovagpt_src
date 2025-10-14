@@ -293,6 +293,7 @@
   <nav class="navbar">
     <h1>💬 {{ chat.name or "New Chat" }}</h1>
     <div class="actions">
+      <span style="opacity: 0.8; margin-right: 15px; font-size: 0.9rem;">🤖 {{ chat.model }}</span>
       <button onclick="window.location.href='{{ url_for('dashboard') }}'">← Back</button>
       <form action="{{ url_for('clear_chat', chat_id=chat.id) }}" method="POST" style="display: inline;" onsubmit="return confirm('Clear all messages?');">
         <button type="submit">Clear Chat</button>
@@ -420,11 +421,12 @@
           // Add assistant message to UI
           addMessageToUI('assistant', data.message.content);
         } else {
-          alert('Error: ' + (data.error || 'Failed to send message'));
+          const errorMsg = data.error || 'Failed to send message';
+          addMessageToUI('assistant', '❌ Error: ' + errorMsg + '\n\nMake sure Ollama is running (ollama serve) and the model is downloaded.');
         }
       } catch (error) {
         typingIndicator.style.display = 'none';
-        alert('Error: ' + error.message);
+        addMessageToUI('assistant', '❌ Connection Error: ' + error.message + '\n\nMake sure Ollama is running on your system.');
       } finally {
         // Re-enable input
         messageInput.disabled = false;
