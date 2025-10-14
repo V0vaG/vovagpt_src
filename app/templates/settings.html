@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Settings - Chat AI</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f5f7fb;
+      min-height: 100vh;
+    }
+
+    .navbar {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 15px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .navbar h1 {
+      font-size: 1.5rem;
+    }
+
+    .navbar a {
+      color: white;
+      text-decoration: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      transition: background-color 0.3s;
+    }
+
+    .navbar a:hover {
+      background-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .container {
+      max-width: 700px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+
+    .header {
+      margin-bottom: 30px;
+    }
+
+    .header h2 {
+      font-size: 2rem;
+      color: #333;
+      margin-bottom: 10px;
+    }
+
+    .header p {
+      color: #666;
+      font-size: 1rem;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+    }
+
+    .card h3 {
+      color: #333;
+      margin-bottom: 20px;
+      font-size: 1.3rem;
+    }
+
+    .form-group {
+      margin-bottom: 25px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      color: #555;
+      font-weight: 500;
+      font-size: 0.95rem;
+    }
+
+    .form-group select {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 1rem;
+      background-color: white;
+      cursor: pointer;
+    }
+
+    .form-group select:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .form-group .help-text {
+      margin-top: 8px;
+      font-size: 0.85rem;
+      color: #999;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      width: 100%;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+    }
+
+    .info-box {
+      background-color: #e3f2fd;
+      border-left: 4px solid #2196F3;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+
+    .info-box p {
+      color: #1976D2;
+      font-size: 0.9rem;
+      margin: 0;
+    }
+
+    .popup {
+      position: fixed;
+      top: -100px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: #4CAF50;
+      color: white;
+      padding: 15px 25px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      opacity: 0;
+      transition: all 0.5s ease-in-out;
+      z-index: 1000;
+      min-width: 300px;
+      text-align: center;
+    }
+
+    .popup.show {
+      top: 20px;
+      opacity: 1;
+    }
+
+    .popup.danger {
+      background-color: #f44336;
+    }
+  </style>
+
+  <script>
+    function showPopup(message, category = 'success') {
+      const popup = document.getElementById('notificationPopup');
+      popup.textContent = message;
+      popup.className = 'popup show ' + category;
+      setTimeout(() => popup.classList.remove('show'), 3000);
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            showPopup("{{ message }}", "{{ category }}");
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+    });
+  </script>
+</head>
+<body>
+  <div id="notificationPopup" class="popup"></div>
+
+  <nav class="navbar">
+    <h1>⚙️ Settings</h1>
+    <a href="{{ url_for('dashboard') }}">← Back to Dashboard</a>
+  </nav>
+
+  <div class="container">
+    <div class="header">
+      <h2>Your Preferences</h2>
+      <p>Customize your Chat AI experience</p>
+    </div>
+
+    <div class="info-box">
+      <p>💡 Configure your API keys in the environment variables (OPENAI_API_KEY, ANTHROPIC_API_KEY)</p>
+    </div>
+
+    <div class="card">
+      <h3>AI Model Settings</h3>
+      <form method="POST">
+        <div class="form-group">
+          <label for="model_preference">Default AI Model</label>
+          <select id="model_preference" name="model_preference">
+            <optgroup label="OpenAI">
+              <option value="gpt-4" {% if user_data.model_preference == 'gpt-4' %}selected{% endif %}>
+                GPT-4 (Most capable, slower)
+              </option>
+              <option value="gpt-3.5-turbo" {% if user_data.model_preference == 'gpt-3.5-turbo' %}selected{% endif %}>
+                GPT-3.5 Turbo (Fast and efficient)
+              </option>
+            </optgroup>
+            <optgroup label="Anthropic">
+              <option value="claude-3-opus-20240229" {% if user_data.model_preference == 'claude-3-opus-20240229' %}selected{% endif %}>
+                Claude 3 Opus (Most capable)
+              </option>
+              <option value="claude-3-sonnet-20240229" {% if user_data.model_preference == 'claude-3-sonnet-20240229' %}selected{% endif %}>
+                Claude 3 Sonnet (Balanced)
+              </option>
+              <option value="claude-3-haiku-20240307" {% if user_data.model_preference == 'claude-3-haiku-20240307' %}selected{% endif %}>
+                Claude 3 Haiku (Fastest)
+              </option>
+            </optgroup>
+          </select>
+          <div class="help-text">
+            This model will be used by default for new chats
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Save Settings</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h3>About</h3>
+      <p style="color: #666; line-height: 1.6;">
+        Chat AI is a powerful conversational interface that supports multiple AI models including OpenAI's GPT and Anthropic's Claude. 
+        Create multiple chat sessions, save your conversation history, and enjoy a modern, intuitive interface.
+      </p>
+    </div>
+  </div>
+</body>
+</html>
+

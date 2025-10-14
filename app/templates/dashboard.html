@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard - Chat AI</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f5f7fb;
+      min-height: 100vh;
+    }
+
+    .navbar {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 15px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .navbar h1 {
+      font-size: 1.5rem;
+    }
+
+    .navbar .user-info {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .navbar a {
+      color: white;
+      text-decoration: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      transition: background-color 0.3s;
+    }
+
+    .navbar a:hover {
+      background-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+
+    .header {
+      margin-bottom: 30px;
+    }
+
+    .header h2 {
+      font-size: 2rem;
+      color: #333;
+      margin-bottom: 10px;
+    }
+
+    .header p {
+      color: #666;
+      font-size: 1rem;
+    }
+
+    .actions {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-secondary {
+      background-color: white;
+      color: #667eea;
+      border: 2px solid #667eea;
+    }
+
+    .btn-secondary:hover {
+      background-color: #667eea;
+      color: white;
+    }
+
+    .chats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+    }
+
+    .chat-card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .chat-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .chat-card h3 {
+      color: #333;
+      margin-bottom: 10px;
+      font-size: 1.2rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .chat-card .meta {
+      color: #999;
+      font-size: 0.85rem;
+      margin-bottom: 15px;
+    }
+
+    .chat-card .actions-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .chat-card .btn-small {
+      padding: 6px 12px;
+      font-size: 0.85rem;
+      flex: 1;
+    }
+
+    .btn-danger {
+      background-color: #f44336;
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background-color: #d32f2f;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .empty-state h3 {
+      color: #666;
+      margin-bottom: 15px;
+      font-size: 1.5rem;
+    }
+
+    .empty-state p {
+      color: #999;
+      margin-bottom: 25px;
+    }
+
+    .popup {
+      position: fixed;
+      top: -100px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: #4CAF50;
+      color: white;
+      padding: 15px 25px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      opacity: 0;
+      transition: all 0.5s ease-in-out;
+      z-index: 1000;
+      min-width: 300px;
+      text-align: center;
+    }
+
+    .popup.show {
+      top: 20px;
+      opacity: 1;
+    }
+
+    .popup.danger {
+      background-color: #f44336;
+    }
+
+    .popup.info {
+      background-color: #2196F3;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-content {
+      background-color: white;
+      margin: 15% auto;
+      padding: 30px;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 500px;
+    }
+
+    .modal h3 {
+      margin-bottom: 20px;
+      color: #333;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      color: #555;
+      font-weight: 500;
+    }
+
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 1rem;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .close-modal {
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      color: #999;
+      cursor: pointer;
+    }
+
+    .close-modal:hover {
+      color: #333;
+    }
+  </style>
+
+  <script>
+    function showPopup(message, category = 'success') {
+      const popup = document.getElementById('notificationPopup');
+      popup.textContent = message;
+      popup.className = 'popup show ' + category;
+      setTimeout(() => popup.classList.remove('show'), 3000);
+    }
+
+    function openNewChatModal() {
+      document.getElementById('newChatModal').style.display = 'block';
+    }
+
+    function closeNewChatModal() {
+      document.getElementById('newChatModal').style.display = 'none';
+    }
+
+    function viewChat(chatId) {
+      window.location.href = `/chat/${chatId}`;
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            showPopup("{{ message }}", "{{ category }}");
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      window.onclick = function(event) {
+        const modal = document.getElementById('newChatModal');
+        if (event.target == modal) {
+          closeNewChatModal();
+        }
+      }
+    });
+  </script>
+</head>
+<body>
+  <div id="notificationPopup" class="popup"></div>
+
+  <nav class="navbar">
+    <h1>🤖 Chat AI</h1>
+    <div class="user-info">
+      <span>{{ username }} ({{ role }})</span>
+      {% if role == "root" %}
+        <a href="{{ url_for('root_dashboard') }}">Admin</a>
+      {% endif %}
+      <a href="{{ url_for('settings') }}">Settings</a>
+      <a href="{{ url_for('logout') }}">Logout</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="header">
+      <h2>Your Chats</h2>
+      <p>Start a new conversation or continue an existing one</p>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-primary" onclick="openNewChatModal()">+ New Chat</button>
+    </div>
+
+    {% if user_chats %}
+      <div class="chats-grid">
+        {% for chat in user_chats %}
+          <div class="chat-card">
+            <h3>{{ chat.name or "New Chat" }}</h3>
+            <div class="meta">
+              Created: {{ chat.created_at[:10] }} | 
+              Messages: {{ chat.messages|length }}
+            </div>
+            <div class="actions-row">
+              <button class="btn btn-primary btn-small" onclick="viewChat('{{ chat.id }}')">Open</button>
+              <form action="{{ url_for('delete_chat', chat_id=chat.id) }}" method="POST" style="flex: 1;" onsubmit="return confirm('Delete this chat?');">
+                <button type="submit" class="btn btn-danger btn-small">Delete</button>
+              </form>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <h3>No chats yet</h3>
+        <p>Start your first conversation by creating a new chat</p>
+        <button class="btn btn-primary" onclick="openNewChatModal()">+ Create Your First Chat</button>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- New Chat Modal -->
+  <div id="newChatModal" class="modal">
+    <div class="modal-content">
+      <span class="close-modal" onclick="closeNewChatModal()">&times;</span>
+      <h3>Create New Chat</h3>
+      <form action="{{ url_for('new_chat') }}" method="POST">
+        <div class="form-group">
+          <label for="chat_name">Chat Name (optional)</label>
+          <input type="text" id="chat_name" name="chat_name" placeholder="My Conversation">
+        </div>
+        <div class="form-group">
+          <label for="model">AI Model</label>
+          <select id="model" name="model">
+            <option value="gpt-4" {% if user_data.model_preference == 'gpt-4' %}selected{% endif %}>GPT-4 (OpenAI)</option>
+            <option value="gpt-3.5-turbo" {% if user_data.model_preference == 'gpt-3.5-turbo' %}selected{% endif %}>GPT-3.5 Turbo (OpenAI)</option>
+            <option value="claude-3-opus-20240229" {% if user_data.model_preference == 'claude-3-opus-20240229' %}selected{% endif %}>Claude 3 Opus (Anthropic)</option>
+            <option value="claude-3-sonnet-20240229" {% if user_data.model_preference == 'claude-3-sonnet-20240229' %}selected{% endif %}>Claude 3 Sonnet (Anthropic)</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Create Chat</button>
+      </form>
+    </div>
+  </div>
+</body>
+</html>
+
