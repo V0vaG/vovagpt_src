@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy Ollama binary directly (faster and more reliable)
-COPY app/ollama /usr/local/bin/ollama
+COPY ollama /usr/local/bin/ollama
 RUN chmod +x /usr/local/bin/ollama
 
 # Install dependencies
@@ -34,7 +34,7 @@ RUN echo '#!/bin/bash\n\
 ollama serve > /tmp/ollama.log 2>&1 &\n\
 sleep 5\n\
 gunicorn -w 4 -b 0.0.0.0:5000 --timeout 120 wsgi:app\n\
-' > /start.sh && chmod +x /start.sh
+' > /app/start.sh && chmod +x /app/start.sh
 
 # Expose ports
 EXPOSE 5000 11434
@@ -51,5 +51,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
 
 
 # Run startup script
-CMD ["./start.sh"]
+CMD ["/app/start.sh"]
 
