@@ -173,7 +173,7 @@ def get_ai_response(messages, model):
                 "messages": messages,
                 "stream": False
             },
-            timeout=120
+            timeout=600  # Increased to 10 minutes for first load
         )
         
         print(f"[DEBUG] Response status: {response.status_code}")
@@ -182,7 +182,9 @@ def get_ai_response(messages, model):
             data = response.json()
             print(f"[DEBUG] Response data keys: {data.keys()}")
             if 'message' in data and 'content' in data['message']:
-                return {"content": data['message']['content']}
+                content = data['message']['content']
+                print(f"[DEBUG] Got response, length: {len(content)}")
+                return {"content": content}
             else:
                 print(f"[DEBUG] Full response: {data}")
                 return {"error": f"Unexpected response format: {data}"}
@@ -190,6 +192,9 @@ def get_ai_response(messages, model):
         print(f"[DEBUG] Error response: {response.text}")
         return {"error": f"Model response error: {response.status_code} - {response.text}"}
     
+    except requests.exceptions.ReadTimeout as e:
+        print(f"[DEBUG] Timeout after 600s - model might be loading")
+        return {"error": "Request timed out. The model might be loading for the first time. Please try again in a moment."}
     except Exception as e:
         print(f"[DEBUG] Exception: {type(e).__name__}: {str(e)}")
         return {"error": f"Ollama error: {str(e)}. Make sure Ollama is running."}
