@@ -19,16 +19,13 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY app/ .
 
+# Copy startup script
+COPY start.sh /start.sh
+RUN chmod +x /start.sh
+
 # Create data directory and ollama models directory
 RUN mkdir -p /root/script_files/vovagpt/data
 RUN mkdir -p /root/script_files/vovagpt/data/models
-
-# Create simple startup script
-RUN echo '#!/bin/bash\n\
-ollama serve > /tmp/ollama.log 2>&1 &\n\
-sleep 5\n\
-gunicorn -w 4 -b 0.0.0.0:5000 --timeout 120 wsgi:app\n\
-' > /start.sh && chmod +x /start.sh
 
 # Expose ports
 EXPOSE 5000 11434
