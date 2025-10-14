@@ -2,14 +2,15 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install system dependencies including Ollama
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     curl \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Ollama
-RUN curl -fsSL https://ollama.com/install.sh | sh
+# Copy Ollama binary directly (faster and more reliable)
+COPY app/ollama /usr/local/bin/ollama
+RUN chmod +x /usr/local/bin/ollama
 
 # Copy requirements and install Python dependencies
 COPY app/requirements.txt .

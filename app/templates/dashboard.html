@@ -387,6 +387,52 @@
       to { transform: rotate(360deg); }
     }
 
+    .ollama-status {
+      background: white;
+      border-radius: 8px;
+      padding: 12px 20px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+    }
+
+    .status-icon {
+      font-size: 1.5rem;
+      transition: color 0.3s ease;
+    }
+
+    .status-icon.online {
+      color: #4CAF50;
+      animation: pulse 2s infinite;
+    }
+
+    .status-icon.offline {
+      color: #f44336;
+    }
+
+    .status-icon.checking {
+      color: #FFC107;
+    }
+
+    .status-text {
+      font-size: 0.95rem;
+      color: #555;
+    }
+
+    .status-details {
+      margin-left: auto;
+      font-size: 0.85rem;
+      color: #999;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
     .footer {
       text-align: center;
       padding: 20px;
@@ -477,6 +523,35 @@
       };
     }
 
+    function checkOllamaStatus() {
+      fetch('/ollama/status')
+        .then(response => response.json())
+        .then(data => {
+          const statusIcon = document.getElementById('statusIcon');
+          const statusText = document.getElementById('statusText');
+          const statusDiv = document.getElementById('ollamaStatus');
+          
+          if (data.connected) {
+            statusIcon.className = 'status-icon online';
+            statusText.innerHTML = `<strong>Ollama Online</strong> - ${data.models} model(s) available`;
+            statusDiv.style.borderLeft = '4px solid #4CAF50';
+          } else {
+            statusIcon.className = 'status-icon offline';
+            statusText.innerHTML = `<strong>Ollama Offline</strong> - ${data.error || 'Cannot connect'}`;
+            statusDiv.style.borderLeft = '4px solid #f44336';
+          }
+        })
+        .catch(error => {
+          const statusIcon = document.getElementById('statusIcon');
+          const statusText = document.getElementById('statusText');
+          const statusDiv = document.getElementById('ollamaStatus');
+          
+          statusIcon.className = 'status-icon offline';
+          statusText.innerHTML = '<strong>Ollama Offline</strong> - Connection error';
+          statusDiv.style.borderLeft = '4px solid #f44336';
+        });
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
@@ -492,6 +567,12 @@
           closeNewChatModal();
         }
       }
+
+      // Check Ollama status on load
+      checkOllamaStatus();
+      
+      // Check every 10 seconds
+      setInterval(checkOllamaStatus, 10000);
     });
   </script>
 </head>
@@ -511,6 +592,12 @@
   </nav>
 
   <div class="container">
+    <!-- Ollama Connection Status -->
+    <div class="ollama-status" id="ollamaStatus">
+      <span class="status-icon" id="statusIcon">●</span>
+      <span class="status-text" id="statusText">Checking Ollama connection...</span>
+    </div>
+
     <!-- Models Section -->
     <div class="header">
       <h2>📦 AI Models</h2>

@@ -492,6 +492,34 @@ def list_models():
         'available': get_available_ollama_models()
     })
 
+@app.route('/ollama/status')
+@login_required
+def ollama_status():
+    """Check if Ollama is connected and responding"""
+    try:
+        response = requests.get(f"{OLLAMA_HOST}/api/tags", timeout=2)
+        if response.status_code == 200:
+            data = response.json()
+            model_count = len(data.get('models', []))
+            return jsonify({
+                'connected': True,
+                'status': 'online',
+                'models': model_count,
+                'host': OLLAMA_HOST
+            })
+        else:
+            return jsonify({
+                'connected': False,
+                'status': 'error',
+                'error': f'HTTP {response.status_code}'
+            })
+    except Exception as e:
+        return jsonify({
+            'connected': False,
+            'status': 'offline',
+            'error': str(e)
+        })
+
 @app.route('/settings', methods=['GET', 'POST'])
 @login_required
 def settings():
