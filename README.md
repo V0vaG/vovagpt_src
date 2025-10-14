@@ -6,12 +6,12 @@ Chat app with Ollama AI models. Works 100% offline.
 
 ### Build & Deploy
 ```bash
-# Build image
-chmod +x build.sh
+# 1. Build image
+chmod +x build.sh deploy.sh
 ./build.sh
 
-# Restart k8s pod
-sudo kubectl delete pod -n argocd -l app=vovagpt
+# 2. Deploy to k8s
+./deploy.sh
 ```
 
 ### Access
@@ -26,11 +26,18 @@ http://192.168.68.67:30099
 
 ## Files
 - `Dockerfile` - All-in-one container (VovaGPT + Ollama)
+- `manifest.yaml` - Kubernetes deployment
+- `build.sh` - Build and push image
+- `deploy.sh` - Deploy to k8s
 - `app/` - Flask application
 - `app/ollama` - Ollama binary
-- `build.sh` - Build and push image
 
 ## Storage
 - Data: `/home/vova/script_files/vovagpt/data/`
 - Models: `/home/vova/script_files/vovagpt/data/models/`
+
+## Requirements
+- Memory: 8Gi (for Ollama + models)
+- Storage: 50Gi (for multiple models)
+- CPU: 4 cores (for AI inference)
 

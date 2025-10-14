@@ -25,14 +25,9 @@ RUN mkdir -p /root/script_files/vovagpt/data/models
 
 # Create simple startup script
 RUN echo '#!/bin/bash\n\
-echo "Starting Ollama..."\n\
-export OLLAMA_HOST=0.0.0.0:11434\n\
-export OLLAMA_MODELS=/root/script_files/vovagpt/data/models\n\
-ollama serve &\n\
-echo "Waiting for Ollama to start..."\n\
+ollama serve > /tmp/ollama.log 2>&1 &\n\
 sleep 5\n\
-echo "Starting Flask..."\n\
-exec gunicorn -w 4 -b 0.0.0.0:5000 --timeout 120 wsgi:app\n\
+gunicorn -w 4 -b 0.0.0.0:5000 --timeout 120 wsgi:app\n\
 ' > /start.sh && chmod +x /start.sh
 
 # Expose ports
