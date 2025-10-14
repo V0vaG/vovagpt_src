@@ -6,7 +6,6 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     curl \
     ca-certificates \
-    supervisor \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Ollama
@@ -23,32 +22,17 @@ COPY app/ .
 RUN mkdir -p /root/script_files/vovagpt/data
 RUN mkdir -p /root/script_files/vovagpt/data/models
 
-# Create supervisor config to run both Ollama and Flask
-RUN echo '[supervisord]\n\
-nodaemon=true\n\
-logfile=/dev/null\n\
-logfile_maxbytes=0\n\
-\n\
-[program:ollama]\n\
-command=/usr/local/bin/ollama serve\n\
-environment=OLLAMA_HOST="0.0.0.0:11434",OLLAMA_MODELS="/root/script_files/vovagpt/data/models"\n\
-autostart=true\n\
-autorestart=true\n\
-stdout_logfile=/dev/stdout\n\
-stdout_logfile_maxbytes=0\n\
-stderr_logfile=/dev/stderr\n\
-stderr_logfile_maxbytes=0\n\
-\n\
-[program:flask]\n\
-command=gunicorn -w 4 -b 0.0.0.0:5000 --timeout 120 wsgi:app\n\
-environment=OLLAMA_HOST="http://localhost:11434",VERSION="2.0.0",PYTHONUNBUFFERED="1"\n\
-autostart=true\n\
-autorestart=true\n\
-stdout_logfile=/dev/stdout\n\
-stdout_logfile_maxbytes=0\n\
-stderr_logfile=/dev/stderr\n\
-stderr_logfile_maxbytes=0\n\
-' > /etc/supervisor/conf.d/supervisord.conf
+# Create simple startup script
+RUN echo '#!/bin/bash\n\
+echo "Starting Ollama..."\n\
+export OLLAMA_HOST=0.0.0.0:11434\n\
+export OLLAMA_MODELS=/root/script_files/vovagpt/data/models\n\
+ollama serve &\n\
+echo "Waiting for Ollama to start..."\n\
+sleep 5\n\
+echo "Starting Flask..."\n\
+exec gunicorn -w 4 -b 0.0.0.0:5000 --timeout 120 wsgi:app\n\
+' > /start.sh && chmod +x /start.sh
 
 # Expose ports
 EXPOSE 5000 11434
@@ -63,6 +47,6 @@ ENV OLLAMA_MODELS=/root/script_files/vovagpt/data/models
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:5000/ || exit 1
 
-# Run supervisor to manage both processes
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+# Run startup script
+CMD ["/start.sh"]
 
