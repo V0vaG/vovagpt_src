@@ -19,12 +19,18 @@ FILES_PATH = os.path.join(HOME_DIR, "script_files", alias)
 DATA_DIR = os.path.join(FILES_PATH, "data")
 USERS_FILE = os.path.join(DATA_DIR, 'users.json')
 CHATS_FILE = os.path.join(DATA_DIR, 'chats.json')
+MODELS_DIR = os.path.join(DATA_DIR, 'models')
 
-# Ensure the directory exists
+# Ensure directories exist
 os.makedirs(DATA_DIR, exist_ok=True)
+os.makedirs(MODELS_DIR, exist_ok=True)
 
 # Ollama Configuration
 OLLAMA_HOST = os.getenv('OLLAMA_HOST', 'http://localhost:11434')
+
+# Set Ollama to use custom models directory
+os.environ['OLLAMA_MODELS'] = MODELS_DIR
+print(f"📁 Ollama models directory: {MODELS_DIR}")
 
 # ------------------ Helpers ------------------
 

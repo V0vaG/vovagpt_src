@@ -19,16 +19,22 @@ pip install -r requirements.txt
 
 ## 🏃 Running the App
 
-### Easiest Way - Use Start Script:
+### Easiest Way - Use Start Script (Recommended):
 ```bash
 cd app
 ./start.sh
 ```
 
+This automatically:
+- Sets up custom models directory: `~/script_files/vovagpt/data/models/`
+- Starts Ollama if needed
+- Starts the Flask app
+
 ### Manual Way:
 ```bash
-# Terminal 1: Start Ollama
-ollama serve
+# Terminal 1: Start Ollama with custom models directory
+cd app
+./start_ollama.sh
 
 # Terminal 2: Start App
 cd app
@@ -36,6 +42,8 @@ python app.py
 ```
 
 Then open: **http://localhost:5000**
+
+> 💡 **Note:** Models are stored in `~/script_files/vovagpt/data/models/` instead of the default Ollama location. See [CUSTOM_MODELS_DIR.md](CUSTOM_MODELS_DIR.md) for details.
 
 ## 📋 First Time Setup
 

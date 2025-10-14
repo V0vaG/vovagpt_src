@@ -20,13 +20,21 @@ fi
 
 echo "✅ Ollama is installed"
 
+# Set custom models directory
+MODELS_DIR="$HOME/script_files/vovagpt/data/models"
+export OLLAMA_MODELS="$MODELS_DIR"
+
+# Create models directory if it doesn't exist
+mkdir -p "$MODELS_DIR"
+echo "📁 Models directory: $MODELS_DIR"
+
 # Check if Ollama is running
 if ! curl -s http://localhost:11434/api/tags &> /dev/null; then
     echo "⚠️  Ollama server is not running"
-    echo "Starting Ollama server..."
+    echo "Starting Ollama server with custom models directory..."
     
-    # Start Ollama in background
-    ollama serve &> /dev/null &
+    # Start Ollama in background with custom models directory
+    OLLAMA_MODELS="$MODELS_DIR" ollama serve &> /dev/null &
     OLLAMA_PID=$!
     
     # Wait for Ollama to start
@@ -36,11 +44,13 @@ if ! curl -s http://localhost:11434/api/tags &> /dev/null; then
         echo "✅ Ollama server started (PID: $OLLAMA_PID)"
     else
         echo "❌ Failed to start Ollama server"
-        echo "Please start it manually: ollama serve"
+        echo "Please start it manually with: OLLAMA_MODELS=$MODELS_DIR ollama serve"
         exit 1
     fi
 else
     echo "✅ Ollama server is running"
+    echo "⚠️  Note: If Ollama was started without OLLAMA_MODELS set, restart it with:"
+    echo "   OLLAMA_MODELS=$MODELS_DIR ollama serve"
 fi
 
 echo ""

@@ -10,6 +10,7 @@ A beautiful, privacy-focused chat application powered by **Ollama** - run powerf
 
 - 🔒 **100% Private & Offline** - All AI processing happens locally, no data sent to cloud
 - 📥 **Easy Model Management** - Download, use, and delete AI models from the dashboard
+- 📁 **Custom Models Directory** - Models stored in `~/script_files/vovagpt/data/models/` for better organization
 - 💬 **Multiple Chats** - Create and manage unlimited conversations
 - 👥 **User System** - Root admin can create and manage multiple users
 - 🎨 **Beautiful UI** - Modern, ChatGPT-like interface
@@ -101,6 +102,7 @@ Local Models (Storage)
 
 - **[Quick Start Guide](QUICK_START.md)** - Get up and running in 5 minutes
 - **[Setup Documentation](OLLAMA_SETUP.md)** - Detailed installation and configuration
+- **[Custom Models Directory](CUSTOM_MODELS_DIR.md)** - How models are stored in custom location
 - **[Migration Summary](MIGRATION_SUMMARY.md)** - What changed from cloud APIs to Ollama
 - **[Architecture](ARCHITECTURE.md)** - Technical architecture and design patterns
 
