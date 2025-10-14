@@ -1,11 +1,12 @@
 # VovaGPT - Offline AI Chat with Ollama
 
-Chat app with Ollama AI models. Works 100% offline.
+Offline chat app with Ollama AI models.
 
-## Quick Start
+## Build & Deploy
 
 ```bash
-# Build & push
+# Build and push
+chmod +x build.sh
 ./build.sh
 
 # Restart pod
@@ -14,26 +15,27 @@ sudo kubectl delete pod -n vovagpt -l app=vovagpt
 
 Access: **http://192.168.68.67:30099**
 
+## Important Notes
+
+⏱️ **First message takes 1-2 minutes** - Model needs to load into memory  
+⚡ **Subsequent messages are fast** - Model stays loaded for 5 minutes  
+🔄 **Timeout increased to 10 minutes** - Handles slow first loads
+
 ## Files
-- `Dockerfile` - Container with VovaGPT + Ollama
-- `start.sh` - Startup script (starts Ollama then Flask)
-- `build.sh` - Build and push image
-- `app/` - Flask application
+- `Dockerfile` - Container (VovaGPT + Ollama)
+- `start.sh` - Starts Ollama then Flask
+- `build.sh` - Build & push script
 - `app/ollama` - Ollama binary
+- `app/` - Flask app
 
 ## Troubleshooting
 
 ### Check logs
 ```bash
-sudo kubectl logs -n vovagpt -l app=vovagpt --tail=50
+sudo kubectl logs -n vovagpt -l app=vovagpt --tail=100
 ```
 
-Look for:
-- `[DEBUG]` lines showing chat requests
-- Ollama errors
-- HTTP status codes
-
-### Test Ollama in pod
+### Test in pod
 ```bash
 POD=$(sudo kubectl get pod -n vovagpt -l app=vovagpt -o jsonpath='{.items[0].metadata.name}')
 sudo kubectl exec -n vovagpt $POD -- curl http://localhost:11434/api/tags
@@ -41,17 +43,17 @@ sudo kubectl exec -n vovagpt $POD -- curl http://localhost:11434/api/tags
 
 ### Common Issues
 
-**Not answering questions?**
+**First message timeout?**
+- Wait 1-2 minutes for model to load
+- Check CPU resources (4 cores recommended)
+- Larger models need more time
+
+**Not answering at all?**
 - Check logs for `[DEBUG]` messages
-- Verify model is downloaded: look for model name in logs
-- Check if model exists in Ollama
+- Verify model downloaded
+- Ensure 8Gi memory available
 
-**"Model not found" error?**
-- Model name might be wrong
-- Download model from dashboard first
-
-## Requirements
-- Memory: 8Gi
-- Storage: 50Gi
-- CPU: 4 cores
-
+## Resources
+- Memory: 8Gi (for Ollama + models)
+- CPU: 4 cores (for AI inference)
+- Storage: 50Gi (for models)
