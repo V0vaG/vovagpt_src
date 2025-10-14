@@ -162,6 +162,10 @@ def delete_ollama_model(model_name):
 def get_ai_response(messages, model):
     """Get response from Ollama model"""
     try:
+        print(f"[DEBUG] Sending request to {OLLAMA_HOST}/api/chat")
+        print(f"[DEBUG] Model: {model}")
+        print(f"[DEBUG] Messages count: {len(messages)}")
+        
         response = requests.post(
             f"{OLLAMA_HOST}/api/chat",
             json={
@@ -172,14 +176,22 @@ def get_ai_response(messages, model):
             timeout=120
         )
         
+        print(f"[DEBUG] Response status: {response.status_code}")
+        
         if response.status_code == 200:
             data = response.json()
+            print(f"[DEBUG] Response data keys: {data.keys()}")
             if 'message' in data and 'content' in data['message']:
                 return {"content": data['message']['content']}
+            else:
+                print(f"[DEBUG] Full response: {data}")
+                return {"error": f"Unexpected response format: {data}"}
         
-        return {"error": f"Model response error: {response.status_code}"}
+        print(f"[DEBUG] Error response: {response.text}")
+        return {"error": f"Model response error: {response.status_code} - {response.text}"}
     
     except Exception as e:
+        print(f"[DEBUG] Exception: {type(e).__name__}: {str(e)}")
         return {"error": f"Ollama error: {str(e)}. Make sure Ollama is running."}
 
 # ------------------ Routes ------------------
