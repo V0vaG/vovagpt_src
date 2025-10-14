@@ -19,9 +19,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY app/ .
 
-# Create data directory and ollama directory
+# Create data directory and ollama models directory
 RUN mkdir -p /root/script_files/vovagpt/data
-RUN mkdir -p /root/.ollama
+RUN mkdir -p /root/script_files/vovagpt/data/models
 
 # Create supervisor config to run both Ollama and Flask
 RUN echo '[supervisord]\n\
@@ -31,7 +31,7 @@ logfile_maxbytes=0\n\
 \n\
 [program:ollama]\n\
 command=/usr/local/bin/ollama serve\n\
-environment=OLLAMA_HOST="0.0.0.0:11434",OLLAMA_MODELS="/root/.ollama/models"\n\
+environment=OLLAMA_HOST="0.0.0.0:11434",OLLAMA_MODELS="/root/script_files/vovagpt/data/models"\n\
 autostart=true\n\
 autorestart=true\n\
 stdout_logfile=/dev/stdout\n\
@@ -57,6 +57,7 @@ EXPOSE 5000 11434
 ENV PYTHONUNBUFFERED=1
 ENV FLASK_APP=app.py
 ENV OLLAMA_HOST=http://localhost:11434
+ENV OLLAMA_MODELS=/root/script_files/vovagpt/data/models
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
