@@ -12,6 +12,5 @@ docker push $IMAGE
 docker push vova0911/vovagpt:amd64_latest
 
 echo ""
-echo "✅ Done!"
+echo "✅ Done! Version: $VERSION"
 echo "sudo kubectl delete pod -n vovagpt -l app=vovagpt"
-
