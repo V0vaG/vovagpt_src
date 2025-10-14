@@ -25,12 +25,14 @@ MODELS_DIR = os.path.join(DATA_DIR, 'models')
 os.makedirs(DATA_DIR, exist_ok=True)
 os.makedirs(MODELS_DIR, exist_ok=True)
 
-# Ollama Configuration
+# Ollama Configuration - Kubernetes/Cloud-native ready
+# In k8s cluster: Set OLLAMA_HOST to the Ollama service name
+# Example: OLLAMA_HOST=http://ollama-service:11434
 OLLAMA_HOST = os.getenv('OLLAMA_HOST', 'http://localhost:11434')
 
-# Set Ollama to use custom models directory
-os.environ['OLLAMA_MODELS'] = MODELS_DIR
-print(f"📁 Ollama models directory: {MODELS_DIR}")
+print(f"🚀 VovaGPT starting...")
+print(f"📁 Data directory: {DATA_DIR}")
+print(f"🤖 Ollama host: {OLLAMA_HOST}")
 
 # ------------------ Helpers ------------------
 
@@ -208,7 +210,7 @@ def register_root():
             save_root_user(username, password)
             flash('Root user registered successfully!', 'success')
             return redirect(url_for('login'))
-    return render_template('register_root.html')
+    return render_template('register_root.html', app_version=app_version)
 
 @app.route('/register_user', methods=['GET', 'POST'])
 def register_user():
@@ -222,7 +224,7 @@ def register_user():
             save_user(username, password)
             flash('User registered successfully!', 'success')
             return redirect(url_for('login'))
-    return render_template('register_user.html')
+    return render_template('register_user.html', app_version=app_version)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -285,7 +287,8 @@ def dashboard():
         user_chats=user_chats,
         user_data=user_data,
         downloaded_models=downloaded_models,
-        available_models=available_models
+        available_models=available_models,
+        app_version=app_version
     )
 
 @app.route('/root_dashboard')
@@ -297,7 +300,7 @@ def root_dashboard():
     
     users_data = load_users()
     user_list = users_data[1]['users'] if len(users_data) > 1 else []
-    return render_template('root_dashboard.html', users=user_list)
+    return render_template('root_dashboard.html', users=user_list, app_version=app_version)
 
 @app.route('/remove_user', methods=['POST'])
 @login_required
@@ -354,7 +357,7 @@ def view_chat(chat_id):
         flash("Access denied.", "danger")
         return redirect(url_for('dashboard'))
     
-    return render_template('chat.html', chat=chat)
+    return render_template('chat.html', chat=chat, app_version=app_version)
 
 @app.route('/chat/<chat_id>/message', methods=['POST'])
 @login_required
@@ -524,7 +527,7 @@ def settings():
     # Get downloaded models for settings
     downloaded_models = get_ollama_models()
     
-    return render_template('settings.html', user_data=user_data, downloaded_models=downloaded_models)
+    return render_template('settings.html', user_data=user_data, downloaded_models=downloaded_models, app_version=app_version)
 
 @app.route('/logout')
 @login_required

@@ -386,6 +386,15 @@
       from { transform: rotate(0deg); }
       to { transform: rotate(360deg); }
     }
+
+    .footer {
+      text-align: center;
+      padding: 20px;
+      color: #999;
+      font-size: 0.85rem;
+      margin-top: 40px;
+      border-top: 1px solid #e0e0e0;
+    }
   </style>
 
   <script>
@@ -626,6 +635,10 @@
         <button type="submit" class="btn btn-primary">Create Chat</button>
       </form>
     </div>
+  </div>
+
+  <div class="footer">
+    VovaGPT v{{ app_version }} - Offline AI Chat powered by Ollama
   </div>
 </body>
 </html>

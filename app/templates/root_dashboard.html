@@ -163,6 +163,15 @@
     .popup.danger {
       background-color: #f44336;
     }
+
+    .footer {
+      text-align: center;
+      padding: 20px;
+      color: #999;
+      font-size: 0.85rem;
+      margin-top: 40px;
+      border-top: 1px solid #e0e0e0;
+    }
   </style>
 
   <script>
@@ -241,6 +250,10 @@
       <h3>Quick Actions</h3>
       <a href="{{ url_for('register_user') }}" class="btn btn-primary">+ Add New User</a>
     </div>
+  </div>
+
+  <div class="footer">
+    VovaGPT v{{ app_version }} - Offline AI Chat powered by Ollama
   </div>
 </body>
 </html>
