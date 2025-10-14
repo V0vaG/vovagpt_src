@@ -1,0 +1,188 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: vovagpt
+---
+# VovaGPT Data PV
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: vovagpt-data-pv
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: /home/vova/script_files/vovagpt
+  storageClassName: ""
+---
+# VovaGPT Data PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: vovagpt-data-pvc
+  namespace: vovagpt
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  volumeName: vovagpt-data-pv
+  storageClassName: ""
+---
+# Ollama Models PV
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: ollama-models-pv
+spec:
+  capacity:
+    storage: 50Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: /home/vova/script_files/vovagpt/ollama-models
+  storageClassName: ""
+---
+# Ollama Models PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ollama-models-pvc
+  namespace: vovagpt
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Gi
+  volumeName: ollama-models-pv
+  storageClassName: ""
+---
+# Ollama Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ollama
+  namespace: vovagpt
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ollama
+  template:
+    metadata:
+      labels:
+        app: ollama
+    spec:
+      containers:
+      - name: ollama
+        image: ollama/ollama:latest
+        ports:
+        - containerPort: 11434
+          name: http
+        env:
+        - name: OLLAMA_HOST
+          value: "0.0.0.0:11434"
+        volumeMounts:
+        - name: ollama-data
+          mountPath: /root/.ollama
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "500m"
+          limits:
+            memory: "8Gi"
+            cpu: "4000m"
+      volumes:
+      - name: ollama-data
+        persistentVolumeClaim:
+          claimName: ollama-models-pvc
+---
+# Ollama Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: ollama
+  namespace: vovagpt
+  labels:
+    app: ollama
+spec:
+  type: ClusterIP
+  ports:
+  - port: 11434
+    targetPort: 11434
+    protocol: TCP
+    name: http
+  selector:
+    app: ollama
+---
+# VovaGPT Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vovagpt-deployment
+  namespace: vovagpt
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vovagpt
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        app: vovagpt
+    spec:
+      containers:
+      - name: vovagpt
+        image: vova0911/vovagpt:amd64_latest
+        ports:
+        - containerPort: 5000
+        env:
+        - name: OLLAMA_HOST
+          value: "http://ollama:11434"
+        - name: VERSION
+          value: "2.0.0"
+        - name: SECRET_KEY
+          value: "change-this-in-production"
+        # Uncomment if needed
+        # imagePullSecrets:
+        # - name: regcred
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "500m"
+          limits:
+            memory: "512Mi"
+            cpu: "1"
+        volumeMounts:
+        - name: data-volume
+          mountPath: /root/script_files/vovagpt
+      volumes:
+      - name: data-volume
+        persistentVolumeClaim:
+          claimName: vovagpt-data-pvc
+---
+# VovaGPT Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: vovagpt-service
+  namespace: vovagpt
+spec:
+  selector:
+    app: vovagpt
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 5000
+      nodePort: 30099
+  type: NodePort
+

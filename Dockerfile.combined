@@ -58,10 +58,6 @@ ENV PYTHONUNBUFFERED=1
 ENV FLASK_APP=app.py
 ENV OLLAMA_HOST=http://localhost:11434
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:5000/ || exit 1
-
 # Run supervisor to manage both processes
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
 

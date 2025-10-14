@@ -116,7 +116,22 @@ export SECRET_KEY=your-secret-key-here
 export VERSION=2.0.0
 ```
 
-### Docker Deployment
+### Deployment Options
+
+#### Option 1: Kubernetes/k3s (Recommended for Production)
+```bash
+# Build and deploy to k3s
+./build-and-deploy.sh 2.0.0
+
+# Or manually
+kubectl apply -k k8s/
+
+# Access at: http://192.168.68.67:30099
+```
+
+See [k8s/README.md](k8s/README.md) for detailed Kubernetes deployment guide.
+
+#### Option 2: Docker Compose (Local Development)
 ```bash
 cd app
 docker-compose up -d
